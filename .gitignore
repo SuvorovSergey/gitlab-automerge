@@ -1,0 +1,7 @@
+.idea
+vendor
+.env
+.vscode
+bin
+config.yml
+./docker/config.yml

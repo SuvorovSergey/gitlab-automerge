@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-automerge-deployment
+  labels:
+    app: gitlab-automerge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab-automerge
+  template:
+    metadata:
+      labels:
+        app: gitlab-automerge
+    spec:
+      containers:
+      - name: gitlab-automerge
+        image: # here your docker image
+        imagePullSecrets:
+        - name: # here secrets for private image registry
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"

@@ -1,5 +1,7 @@
 # gitlab-automerge
 
+The bot will track all merge reqests that are not marked as Draft and automatically accept them if the number of likes reaches 2 (or other value that is specified in the settings)
+
 ## installation
 
 clone repository

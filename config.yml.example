@@ -2,7 +2,7 @@ gitlab:
   apiVersion: 4
   baseUrl: ""
   token: ""
-  configFile: ".automerge" #file with automerge config in default branch
+  configFile: ".automerge.conf" #file with automerge config in default branch
 
 scheduler:
   merge:  60s #fetch merge requests and accept every 60 seconds

@@ -11,7 +11,7 @@ import (
 )
 
 type Gitlab struct {
-	configFile     string	
+	configFile     string
 	ProjectStorage *storage.ProjectStorage
 	FileStorage    *storage.FileStorage
 }
@@ -42,10 +42,10 @@ func (g *Gitlab) Projects() []entity.Project {
 //fetch all user projects and fetch configuration for every project
 func (g *Gitlab) ProjectsWithConfig() []entity.Project {
 	var wg sync.WaitGroup
-	
+
 	log.Println("fetching projects...")
 	projects := g.Projects()
-	
+
 	for i := range projects {
 		wg.Add(1)
 		go func(p *entity.Project) {
@@ -62,17 +62,16 @@ func (g *Gitlab) ProjectsWithConfig() []entity.Project {
 	}
 	wg.Wait()
 
+	var withConfig []entity.Project
 	//remove projects without automerge configuration
 	for i := 0; i < len(projects); i++ {
-		if projects[i].Config == nil {
-			projects = append(projects[:i], projects[i+1:]...)
-			i = 0
+		if projects[i].Config != nil {
+			log.Printf("found project: %s (id: %d, config:%+v)", projects[i].Name, projects[i].Id, projects[i].Config)
+			withConfig = append(withConfig, projects[i])
 		}
 	}
 
-	log.Printf("found projects: %+v", projects)
-
-	return projects
+	return withConfig
 }
 
 //fetch automerge config for project
@@ -137,18 +136,19 @@ func (g *Gitlab) AcceptMergeRequest(pId, mId int) error {
 func (g *Gitlab) AcceptAllMergeRequests(projects []entity.Project) {
 	for i := range projects {
 		go func(project *entity.Project) {
-			log.Printf("fetch merge requests for project %s", project.Name)
+			log.Printf("fetching merge requests for project \"%s\"...", project.Name)
 			mergeRequests := g.MergeRequests(project)
-			if len(mergeRequests) > 0 {
-				log.Printf("found merge requests for project %s: %+v", project.Name, mergeRequests)
-			}
+
 			for _, mr := range mergeRequests {
+				log.Printf("found in \"%s\": %s from %s to %s, id:%d",
+					project.Name, mr.Title, mr.SourceBranch, mr.TargetBranch, mr.Iid)
+
 				if mr.Upvotes-mr.Downvotes >= project.Config.UpvotesThreshold {
-					log.Printf("trying to merge %+v", mr)
-					if err := g.AcceptMergeRequest(project.Id, mr.Id); err != nil {
-						log.Printf("error during merging Merge request %s: %+v", mr.Title, err)
+					log.Printf("trying to merge %s", mr.Title)
+					if err := g.AcceptMergeRequest(project.Id, mr.Iid); err != nil {
+						log.Printf("ERROR during merging Merge request %s: %+v", mr.Title, err)
 					} else {
-						log.Printf("Merge request %s from %s to %s accepted successfully", mr.Title, mr.SourceBranch, mr.TargetBranch)
+						log.Printf("SUCCESS merge %s from %s to %s", mr.Title, mr.SourceBranch, mr.TargetBranch)
 					}
 				}
 			}
